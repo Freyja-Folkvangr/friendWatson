@@ -50,15 +50,20 @@ def get_user_step(uid):
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    def command_start(message):
-        cid = message.chat.id
-        if cid not in knownUsers:  # if user hasn't used the "/start" command yet:
-            knownUsers.append(cid)  # save user id, so you could brodcast messages to all users of this bot later
-            userStep[cid] = 0  # save user id and his current "command level", so he can use the "/getImage" command
-            command_help(message)  # show the new user the help page
-            bot.reply_to(message, 'Hola, soy Watson, un bot con principios de machine learning, lo cual me ayuda a aprender de mis interacciones con humanos. ¿En qué te ayudo?')
-        else:
-            bot.send_message(cid, "Ya nos conocemos!")
+    cid = message.chat.id
+    if cid not in knownUsers:  # if user hasn't used the "/start" command yet:
+        knownUsers.append(cid)  # save user id, so you could brodcast messages to all users of this bot later
+        userStep[cid] = 0  # save user id and his current "command level", so he can use the "/getImage" command
+        command_help(message)  # show the new user the help page
+        bot.reply_to(message, 'Hola, soy Watson, un bot con principios de machine learning, lo cual me ayuda a aprender de mis interacciones con humanos. ¿En qué te ayudo?')
+    else:
+        bot.send_message(cid, "Ya nos conocemos!")
+
+
+@bot.message_handler(commands=['kill'])
+def command_help(m):
+    cid = m.chat.id
+    bot.send_message(cid, 'Hay un error de autorización para eso.')  # send the generated help page
 
 @bot.message_handler(commands=['help'])
 def command_help(m):
