@@ -140,6 +140,21 @@ def echo_all(message):
                 bot.send_message(cid, "¿Cual de todas?", reply_markup=lightsKeyboard)  # show the keyboard
                 userStep[cid] = 1  # set the user to the next step (expecting a reply in the listener now)
 
+        elif 'lista_luces' in response['intents'][0]['intent']:
+            cid = message.chat.id
+            bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
+            bot.send_chat_action(cid, 'typing')
+
+            lightList = ''
+            i = 0
+            for item in getLights():
+                if i == 0:
+                    lightList += item
+                else:
+                    lightList += ', {}'.format(item)
+                i += 1
+            bot.send_message(cid, 'Estas son las luces que encontré: {}'.format(lightList))
+
         elif 'hora' in response['intents'][0]['intent']:
             bot.reply_to(message, response['output']['text'][0].format(time.strftime('%H:%M:%S')))
         elif 'chiste' in response['intents'][0]['intent']:
@@ -164,5 +179,10 @@ def echo_all(message):
 @bot.edited_message_handler(func=lambda m: True, content_types=['voice'])
 def echo_voice(m):
     print(m)
+
+import logging
+
+logger = telebot.logger
+telebot.logger.setLevel(logging.DEBUG) # Outputs debug messages to console.
 
 bot.polling()
