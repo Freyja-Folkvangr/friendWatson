@@ -302,6 +302,11 @@ def echo_all(message):
                 i += 1
             bot.send_message(cid, 'Estas son las luces que encontré: {}'.format(lightList))
 
+        elif response['output']['text'][0] == 'sendWatson':
+            from random import randint
+            photo = open('./img/' + randint(1, 2), 'rb')  # open reader
+            bot.send_photo(42789923, photo, 'THINK')  # send downloaded file
+
         elif response['output']['text'][0] == 'AskWolfram':
             inputTranslation = translator.translate(text=text, source='es', target='en')
             bot.send_message(cid, 'hablando con WolframAlpha...')
