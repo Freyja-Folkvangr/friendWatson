@@ -304,7 +304,7 @@ def echo_all(message):
 
         elif response['output']['text'][0] == 'sendWatson':
             from random import randint
-            photo = open('./img/' + randint(1, 2), 'rb')  # open reader
+            photo = open('./img/' + str(randint(1, 2))+'.jpg', 'rb')  # open reader
             bot.send_photo(42789923, photo, 'THINK')  # send downloaded file
 
         elif response['output']['text'][0] == 'AskWolfram':
