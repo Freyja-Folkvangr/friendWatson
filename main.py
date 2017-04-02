@@ -1,4 +1,4 @@
-import telebot, requests, wolframalpha, persistence, sys
+import telebot, requests, wolframalpha, persistence, sys, wolfram, conversationTools
 from telebot import types
 from watson_developer_cloud import ConversationV1, LanguageTranslatorV2
 import time
@@ -120,7 +120,16 @@ def send_welcome(message):
         bot.register_next_step_handler(message, process_name_step)
         userStep[cid] = 1
     else:
-        bot.send_message(cid, "Hola {}, ya estamos conectados!".format(database.user_dict[cid]['name']))
+        bot.send_message(cid, "{}, acabo de poner algunas cosas en su lugar...".format(database.user_dict[cid]['name']), disable_notification=True)
+        bot.send_chat_action(cid, 'typing')
+        response = conversation.message(workspace_id=workspace_id, message_input={
+            'text': message.text, 'context' : cid})
+        if response['output']['text'][0] not in ['askTwitter', 'askWolfram']:
+            bot.reply_to(message, response['output']['text'])
+        else:
+            bot.send_message(cid, "¿Qué me dijiste, lo puedes repetir?", disable_notification=True)
+    return
+
 
 
 def process_name_step(message):
@@ -131,7 +140,7 @@ def process_name_step(message):
         database.user_dict[chat_id] = {}
         database.user_dict[chat_id]['name'] = name
         database.user_dict[chat_id]['id'] = message.from_user.id
-        msg = bot.reply_to(message, '¿Cuántos años tienes?')
+        msg = bot.reply_to(message, '¿Cuántos años tienes?\nPor favor responde solo con números.')
         bot.register_next_step_handler(msg, process_age_step)
     except Exception as e:
         bot.reply_to(message, 'oooops {}'.format(e))
@@ -188,9 +197,12 @@ def whois(message):
         bot.register_next_step_handler(message, getUserInfo)
 
 def getUserInfo(message):
+    cid = message.chat.id
     try:
         photo = bot.get_user_profile_photos(database.user_dict[int(message.text)]['id'], limit=2)
+        if len(photo.photos) == 0: return bot.send_message(cid, 'No hay fotos para \'{}\' :('.format(database.user_dict[int(message.text)]['name']))
         for item in photo.photos:
+            bot.send_chat_action(cid, 'upload_photo')
             fid = item[0].file_id #File ID
             file_info = bot.get_file(fid) #Get file path by file ID
             downloaded_file = bot.download_file(file_info.file_path) #download file
@@ -204,6 +216,7 @@ def getUserInfo(message):
 
             from os import remove
             remove('./' + str(fid)) #remove file
+        return
 
     except Exception as e:
         bot.reply_to(message, 'oooops {}'.format(e))
@@ -247,10 +260,10 @@ def echo_all(message):
     bot.send_chat_action(cid, 'typing')
 
     response = conversation.message(workspace_id=workspace_id, message_input={
-        'text': message.text})
+        'text': message.text, 'context' : cid})
     print('{}: {} >> R: {}'.format(cid, message.text, response['output']['text'][0]))
     try:
-        if 'enciende' in response['intents'][0]['intent']:
+        if conversationTools.hasIntent(response, 'enciende'):
             message.stateRequest = True
 
             if message.chat.id not in privilegedChats:
@@ -266,7 +279,7 @@ def echo_all(message):
                 bot.send_message(cid, "¿Cual de todas?", reply_markup=lightsKeyboard)  # show the keyboard
                 userStep[cid] = 1  # set the user to the next step (expecting a reply in the listener now)
 
-        elif 'apaga' in response['intents'][0]['intent']:
+        elif conversationTools.hasIntent(response, 'apaga'):
             message.stateRequest = False
             cid = message.chat.id
             text = message.text
@@ -284,7 +297,7 @@ def echo_all(message):
                 bot.send_message(cid, "¿Cual de todas?", reply_markup=lightsKeyboard)  # show the keyboard
                 userStep[cid] = 1  # set the user to the next step (expecting a reply in the listener now)
 
-        elif 'lista_luces' in response['intents'][0]['intent']:
+        elif conversationTools.hasIntent(response, 'lista_luces'):
             cid = message.chat.id
             bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
             bot.send_chat_action(cid, 'typing')
@@ -302,47 +315,36 @@ def echo_all(message):
                 i += 1
             bot.send_message(cid, 'Estas son las luces que encontré: {}'.format(lightList))
 
-        elif response['output']['text'][0] == 'sendWatson':
+        elif conversationTools.hasResponseText(response, 'sendWatson'):
             from random import randint
             photo = open('./img/' + str(randint(1, 2))+'.jpg', 'rb')  # open reader
-            bot.send_photo(42789923, photo, 'THINK')  # send downloaded file
+            bot.send_chat_action(cid, 'upload_photo')
+            bot.send_photo(cid, photo, 'THINK')  # send downloaded file
 
-        elif response['output']['text'][0] == 'AskWolfram':
+        elif conversationTools.hasResponseText(response, 'askWolfram'):
             inputTranslation = translator.translate(text=text, source='es', target='en')
-            bot.send_message(cid, 'hablando con WolframAlpha...')
-            bot.send_message(cid, 'Wolfram query>> {}'.format(inputTranslation))
+            bot.send_chat_action(cid, 'upload_document')
             res = wolfram.query(inputTranslation)
+
             if res.success == 'false':
-                print('hola')
-                bot.send_message(cid, 'Wolfram >> FAIL')
                 bot.send_message(cid, 'Estoy pensando.....', disable_notification=True)
-                bot.send_chat_action(cid, 'typing')
-                res = wolfram.query(res.didyoumeans['didyoumean']['#text'])
-                bot.send_message(cid, 'maybe >> {} >> query'.format(res.didyoumeans['didyoumean']['#text']), disable_notification=True)
-            try:
-                print('chao')
-                bot.send_message(cid, 'Wolfram result>> {}'.format(next(res.results)))
-                #for item in res.results:
-                #    print(item)
-                #    hasattr(item, 'text')
-                #for item in res.pods:
-                #    if hasattr(item, 'subpod'):
-                #        for subpod in item:
-                #            print(type(getattr(item, subpod)))
-                #            print('{} >> {}'.format(subpod, getattr(item, subpod)))
-                #for pod in res.pods:
-                    #if hasattr(pod, 'primary') and hasattr(pod, 'results'):
-                    #    print('Primario!!!!')
-                    #    print(pod)
-                #bot.reply_to(message, translator.translate(text=next(res.results).text, source='en', target='es'))
-            except(StopIteration):
-                print(next(res.results).text)
-                bot.send_message(cid, 'Tu pregunta es muy amplia y tiene demasiadas respuestas :(', disable_notification=False)
+                bot.send_chat_action(cid, 'upload_document')
+                try:
+                    res = wolfram.query(res.didyoumeans['didyoumean']['#text'])
+                except(TypeError):
+                    bot.reply_to(message, 'Yo y WolframAlpha no entendemos la pregunta :(')
 
+            if hasattr(res, 'results'):
+                for pod in res.results:
+                    if hasattr(pod, 'subpod'):
+                        for subpod in pod.subpod:
+                            if hasattr(subpod, 'plaintext'):
+                                bot.send_chat_action(cid, 'typing')
+                                bot.reply_to(message, subpod['plaintext'])
 
-        elif 'hora' in response['intents'][0]['intent']:
+        elif conversationTools.hasIntent(response, 'hora'):
             bot.reply_to(message, response['output']['text'][0].format(time.strftime('%H:%M:%S')))
-        elif 'chiste' in response['intents'][0]['intent']:
+        elif conversationTools.hasIntent(response, 'chiste'):
             resp = requests.get('http://api.icndb.com/jokes/random')
             if resp.status_code != 200:
                 bot.reply_to(message, response['output']['text'])
@@ -353,7 +355,7 @@ def echo_all(message):
                     source='en', target='es')
                 bot.send_message(message.chat.id, translation)
         else:
-            bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
+            bot.send_message(message.chat.id, response['output']['text'])
     except(IndexError) as err:
         bot.reply_to(message, 'FAIL >> {} >> R: {}'.format(err, response['output']['text'][0]))
         print(response)
