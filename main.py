@@ -35,13 +35,17 @@ wolfram = wolframalpha.Client('VHE2HT-4VQW535Y3X')
 userStep = {}  # so they won't reset every time the bot restarts
 
 privilegedChats = [42789923]
+tmp = []
 
 commands = {  # command description used in the "help" command
-                'start': 'Usar el bot',
-                'help': 'Da informacion de los comandos disponibles.',
-                'me': 'Muestra la información que el bot tiene sobre ti.',
+                'help, /ayuda': 'Da informacion de los comandos disponibles.',
+                'me, /yo': 'Muestra la información que el bot tiene sobre ti.',
+                'ask, /pregunta, /preguntar'  : 'Pregúntale a un humano',
+                'ejemplos' : 'Muestra algunos ejemplos de preguntas interesantes',
                 'reset': 'Permite reingresar tus datos básicos.',
 }
+
+ejemplos = ['Cuánta sal hay en el mar?', 'Puedes fallar el test de Turing?', 'Cuéntame un chiste sucio?', 'Two things are infinite...', 'Aeropuerto de santiago de chile', 'Quién dejó el gato afuera?', 'Tell me a physics joke', 'Iones de ácido débiles', 'Cálculo de gravedad', 'Próximo eclipse solar', 'Aplicaciones que soportan .gif', 'Pikachu', 'Voyager 1', 'Caninos', 'Lenguas de España']
 
 hideBoard = types.ReplyKeyboardRemove()  # if sent as reply_markup, will hide the keyboard
 
@@ -56,9 +60,49 @@ def get_user_step(uid, message):
         send_welcome(message)
         return 1
 
-@bot.message_handler(commands=['me'])
+
+@bot.message_handler(commands=['ask', 'pregunta', 'preguntar'])
+def askGiuliano(message):
+    cid = message.chat.id
+    print ('{}: {}'.format(cid, message.text))
+    bot.send_chat_action(cid, 'typing')
+    bot.send_message(cid, database.user_dict[cid]['name'] + ', enviemos tu pregunta....\n¿Cual es tu pregunta?')
+    userStep[cid] = 1
+    bot.register_next_step_handler(message, sendQuestion)
+
+def sendQuestion(message):
+    cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
+    print('{}: /ask {}'.format(cid, message.text))
+    bot.forward_message(privilegedChats[0],cid,message.message_id)
+    bot.send_message(cid, 'Mensaje enviado, gracias. :)')
+    bot.send_message(privilegedChats[0], 'from: {}'.format(cid))
+    userStep[cid] = 0
+
+@bot.message_handler(commands=['reply'])
+def replyQuestion(message):
+    cid = message.chat.id
+    print('{}: {}'.format(cid, message.text))
+    bot.send_chat_action(cid, 'typing')
+    if cid not in privilegedChats:
+        bot.send_message(cid, 'No tienes permiso.')
+    else:
+        bot.send_message(cid, 'Responder a: Respuesta')
+        userStep[cid] = 1
+        bot.register_next_step_handler(message, sendReply)
+
+def sendReply(message):
+    cid = message.chat.id
+    print('{}: /reply {}'.format(cid, message.text))
+    to = message.text.split(':')
+    bot.forward_message(to, cid, message.message_id)
+    bot.send_message(cid, 'Enviado')
+    userStep[cid] = 0
+
+@bot.message_handler(commands=['me', 'yo'])
 def userInfo(message):
     cid = message.chat.id
+    print('{}: {}'.format(cid, message.text))
     bot.send_chat_action(cid, 'typing')
     bot.send_message(cid, database.user_dict[cid]['name'] + ', esto es lo que sé de ti:\n- Edad: ' + str(
         database.user_dict[cid]['age']) + '\n- Sexo: ' + database.user_dict[cid]['sex'])
@@ -66,6 +110,7 @@ def userInfo(message):
 @bot.message_handler(commands=['reset'])
 def resetUser(message):
     cid = message.chat.id
+    print('{}: {}'.format(cid, message.text))
     bot.send_chat_action(cid, 'typing')
     userStep[cid] = 1
     bot.send_message(cid, 'Vamos a verificar tu información!')
@@ -79,6 +124,7 @@ def resetUser(message):
 @bot.message_handler(commands=['broadcast'])
 def broadcast(message):
     cid = message.chat.id
+    print('{}: {}'.format(cid, message.text))
     if cid not in privilegedChats:
         bot.send_message(cid, 'Lo siento, solo obedezco a Giuliano.')
         sendSystemBroadcast('{} intentó hacer broadcast por comando.'.format(cid))
@@ -90,6 +136,7 @@ def broadcast(message):
 @bot.message_handler(commands=['database'])
 def broadcast(message):
     cid = message.chat.id
+    print('{}: {}'.format(cid, message.text))
     if cid not in privilegedChats:
         bot.send_message(cid, 'Lo siento, solo obedezco a Giuliano.')
         sendSystemBroadcast('{} intentó acceder a la base de datos por comando.'.format(cid))
@@ -109,6 +156,8 @@ def sendSystemBroadcast(messageString):
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     cid = message.chat.id
+    print('{}: {}'.format(cid, message.text))
+    bot.send_message(cid, '*Importante: Nunca jamás envíes emojis a este bot*')
     bot.send_chat_action(cid, 'typing')
     if cid not in database.knownUsers:
         database.knownUsers.append(cid)  # save user id, so you could brodcast messages to all users of this bot later
@@ -120,11 +169,10 @@ def send_welcome(message):
         bot.register_next_step_handler(message, process_name_step)
         userStep[cid] = 1
     else:
-        bot.send_message(cid, "{}, acabo de poner algunas cosas en su lugar...".format(database.user_dict[cid]['name']), disable_notification=True)
         bot.send_chat_action(cid, 'typing')
         response = conversation.message(workspace_id=workspace_id, message_input={
             'text': message.text, 'context' : cid})
-        if response['output']['text'][0] not in ['askTwitter', 'askWolfram']:
+        if response['output']['text'][0] not in ['askTwitter', 'askWolfram', 'sendWatson']:
             bot.reply_to(message, response['output']['text'])
         else:
             bot.send_message(cid, "¿Qué me dijiste, lo puedes repetir?", disable_notification=True)
@@ -182,6 +230,7 @@ def process_sex_step(message):
 @bot.message_handler(commands=['kill'])
 def kill(m):
     cid = m.chat.id
+    print('{}: {}'.format(cid, m.text))
     sendSystemBroadcast('{} trató de matar a todo el mundo.'.format(cid))
     bot.send_message(cid, 'Hay un error de autorización para eso.')  # send the generated help page
 
@@ -213,24 +262,38 @@ def getUserInfo(message):
 
             photo = open('./' + fid, 'rb') #open reader
             bot.send_photo(42789923, photo, database.user_dict[int(message.text)]['name']) #send downloaded file
+            photo.close()
 
             from os import remove
             remove('./' + str(fid)) #remove file
-        return
+
+            userStep[cid] = 0
 
     except Exception as e:
         bot.reply_to(message, 'oooops {}'.format(e))
 
 
-@bot.message_handler(commands=['help', 'h'])
+
+@bot.message_handler(commands=['help', 'h', 'ayuda'])
 def command_help(m):
     cid = m.chat.id
+    print('{}: {}'.format(cid, m.text))
     help_text = "Estos comandos podrían ser útiles: \n"
     for key in commands:  # generate help text out of the commands dictionary defined at the top
         help_text += "/" + key + ": "
         help_text += commands[key] + "\n"
     bot.send_message(cid, help_text)  # send the generated help page
     bot.send_message(cid, 'Si quieres saber más de mi o de las cosas que puedo hacer, solo debes preguntármelo.')
+
+@bot.message_handler(commands=['ejemplos', 'ejemplo'])
+def command_help(m):
+    cid = m.chat.id
+    print('{}: {}'.format(cid, m.text))
+    examples = "Puedes decirme cosas como: \n"
+    for item in ejemplos:
+        examples += '\n- {}'.format(item)
+    bot.send_message(cid, examples)  # send the generated help page
+    bot.send_message(cid, 'Si quieres saber más de mi, solo debes preguntármelo.')
 
 # @bot.message_handler(func=lambda message: get_user_step(message.chat.id, message) == 1)
 # def lightSelection(m):
@@ -322,25 +385,7 @@ def echo_all(message):
             bot.send_photo(cid, photo, 'THINK')  # send downloaded file
 
         elif conversationTools.hasResponseText(response, 'askWolfram'):
-            inputTranslation = translator.translate(text=text, source='es', target='en')
-            bot.send_chat_action(cid, 'upload_document')
-            res = wolfram.query(inputTranslation)
-
-            if res.success == 'false':
-                bot.send_message(cid, 'Estoy pensando.....', disable_notification=True)
-                bot.send_chat_action(cid, 'upload_document')
-                try:
-                    res = wolfram.query(res.didyoumeans['didyoumean']['#text'])
-                except(TypeError):
-                    bot.reply_to(message, 'Yo y WolframAlpha no entendemos la pregunta :(')
-
-            if hasattr(res, 'results'):
-                for pod in res.results:
-                    if hasattr(pod, 'subpod'):
-                        for subpod in pod.subpod:
-                            if hasattr(subpod, 'plaintext'):
-                                bot.send_chat_action(cid, 'typing')
-                                bot.reply_to(message, subpod['plaintext'])
+            handleWolframQuestion(message)
 
         elif conversationTools.hasIntent(response, 'hora'):
             bot.reply_to(message, response['output']['text'][0].format(time.strftime('%H:%M:%S')))
@@ -356,12 +401,58 @@ def echo_all(message):
                 bot.send_message(message.chat.id, translation)
         else:
             bot.send_message(message.chat.id, response['output']['text'])
+            if conversationTools.isEmpty(response):
+                markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+                markup.add('Si', 'No')
+                bot.send_message(cid, '¿Busco información adicional?', reply_markup=markup)
+                tmp.append(message)
+                userStep[cid] = 1
+                message = bot.register_next_step_handler(message, askWolfram)
+
     except(IndexError) as err:
-        bot.reply_to(message, 'FAIL >> {} >> R: {}'.format(err, response['output']['text'][0]))
+        bot.reply_to(message, 'oooops {} >> {}'.format(err, response['output']['text'][0]))
         print(response)
         print(err)
     finally:
         pass
+
+def askWolfram(message):
+    cid = message.chat.id
+    selection = message.text
+    try:
+        if (selection == u'Si') or (selection == u'No'):
+            userStep[cid] = 0
+            handleWolframQuestion(tmp[0])
+            tmp.clear()
+            return 1
+        else:
+            userStep[cid] = 0
+            return 0
+    except Exception as e:
+        bot.reply_to(message, 'oooops {}'.format(e))
+
+def handleWolframQuestion(message):
+    cid = message.chat.id
+    text = message.text
+    inputTranslation = translator.translate(text=text, source='es', target='en')
+    bot.send_chat_action(cid, 'upload_document')
+    res = wolfram.query(inputTranslation)
+
+    if res.success == 'false':
+        bot.send_message(cid, 'Estoy pensando.....', disable_notification=True)
+        bot.send_chat_action(cid, 'upload_document')
+        try:
+            res = wolfram.query(res.didyoumeans['didyoumean']['#text'])
+        except(TypeError):
+            bot.reply_to(message, 'No puedo responder esto, le pregunté a otro bot y tampoco sabe :(')
+
+    if hasattr(res, 'results'):
+        for pod in res.results:
+            if hasattr(pod, 'subpod'):
+                for subpod in pod.subpod:
+                    if hasattr(subpod, 'plaintext'):
+                        bot.send_chat_action(cid, 'typing')
+                        bot.reply_to(message, subpod['plaintext'])
 
 @bot.edited_message_handler(func=lambda m: True, content_types=['voice'])
 def echo_voice(m):

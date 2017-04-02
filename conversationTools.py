@@ -4,6 +4,11 @@ def hasIntent(response, intent):
                 return True
     return False
 
+def isEmpty(response):
+    if 'intents' in response:
+        return not len(response['intents'])
+    return False
+
 def hasEntity(response, text):
     pass
 
