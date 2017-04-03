@@ -42,6 +42,7 @@ commands = {  # command description used in the "help" command
                 'me, /yo': 'Muestra la información que el bot tiene sobre ti.',
                 'ask, /pregunta, /preguntar'  : 'Pregúntale a un humano',
                 'ejemplos' : 'Muestra algunos ejemplos de preguntas interesantes',
+                'cid' : 'Muestra el chat id.',
                 'reset': 'Permite reingresar tus datos básicos.',
 }
 
@@ -106,6 +107,13 @@ def userInfo(message):
     bot.send_chat_action(cid, 'typing')
     bot.send_message(cid, database.user_dict[cid]['name'] + ', esto es lo que sé de ti:\n- Edad: ' + str(
         database.user_dict[cid]['age']) + '\n- Sexo: ' + database.user_dict[cid]['sex'])
+
+@bot.message_handler(commands=['cid'])
+def userInfo(message):
+    cid = message.chat.id
+    print('{}: {}'.format(cid, message.text))
+    bot.send_chat_action(cid, 'typing')
+    bot.send_message(cid, cid)
 
 @bot.message_handler(commands=['reset'])
 def resetUser(message):
@@ -286,7 +294,7 @@ def command_help(m):
     bot.send_message(cid, 'Si quieres saber más de mi o de las cosas que puedo hacer, solo debes preguntármelo.')
 
 @bot.message_handler(commands=['ejemplos', 'ejemplo'])
-def command_help(m):
+def sendEjemplos(m):
     cid = m.chat.id
     print('{}: {}'.format(cid, m.text))
     examples = "Puedes decirme cosas como: \n"
@@ -420,7 +428,7 @@ def askWolfram(message):
     cid = message.chat.id
     selection = message.text
     try:
-        if (selection == u'Si') or (selection == u'No'):
+        if (selection == u'Si'):
             userStep[cid] = 0
             handleWolframQuestion(tmp[0])
             tmp.clear()
