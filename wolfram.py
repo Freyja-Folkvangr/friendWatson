@@ -1,2 +1,0 @@
-def handleResponse(response):
-    pass

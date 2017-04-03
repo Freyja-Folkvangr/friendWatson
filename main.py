@@ -1,4 +1,4 @@
-import telebot, requests, wolframalpha, persistence, sys, wolfram, conversationTools
+import telebot, requests, wolframalpha, persistence, sys, conversationTools
 from telebot import types
 from watson_developer_cloud import ConversationV1, LanguageTranslatorV2
 import time
@@ -40,8 +40,8 @@ tmp = []
 commands = {  # command description used in the "help" command
                 'help, /ayuda': 'Da informacion de los comandos disponibles.',
                 'me, /yo': 'Muestra la información que el bot tiene sobre ti.',
-                'ask, /pregunta, /preguntar'  : 'Pregúntale a un humano',
-                'ejemplos' : 'Muestra algunos ejemplos de preguntas interesantes',
+                'ask, /pregunta, /preguntar'  : 'Pregúntale a un humano.',
+                'ejemplos' : 'Muestra algunos ejemplos de preguntas interesantes.',
                 'cid' : 'Muestra el chat id.',
                 'reset': 'Permite reingresar tus datos básicos.',
 }
@@ -437,6 +437,7 @@ def askWolfram(message):
             userStep[cid] = 0
             return 0
     except Exception as e:
+        print(e)
         bot.reply_to(message, 'oooops {}'.format(e))
 
 def handleWolframQuestion(message):
@@ -462,17 +463,10 @@ def handleWolframQuestion(message):
                         bot.send_chat_action(cid, 'typing')
                         bot.reply_to(message, subpod['plaintext'])
 
-@bot.edited_message_handler(func=lambda m: True, content_types=['voice'])
-def echo_voice(m):
-    print(m)
-
-
-
-
 def main_loop():
     bot.polling(True)
     while 1:
-        time.sleep(1)
+        pass
 
 if __name__ == '__main__':
     try:
