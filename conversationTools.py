@@ -1,5 +1,5 @@
 def hasIntent(response, intent):
-    if 'intents' in response:
+    if 'intents' in response and not isEmpty(response):
         if intent in response['intents'][0]['intent']:
             return True
     return False
