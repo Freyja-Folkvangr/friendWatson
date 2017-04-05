@@ -18,6 +18,13 @@ def getLights():
         yield light
     pass
 
+privilegedChats = [42789923, 25863480]
+def hasAccess(cid):
+    if cid in privilegedChats:
+        return True
+    else:
+        return False
+
 bot = telebot.TeleBot("352103827:AAG1fNzI5S3M_Xg0B5cnhFKP3w6NwJHxi24")
 conversation = ConversationV1(
     username='de3f5464-f9da-46e0-b517-203d4e95237c',
@@ -33,8 +40,6 @@ wolfram = wolframalpha.Client('VHE2HT-4VQW535Y3X')
 
 
 userStep = {}  # so they won't reset every time the bot restarts
-
-privilegedChats = [42789923]
 tmp = []
 
 commands = {  # command description used in the "help" command
@@ -75,9 +80,11 @@ def sendQuestion(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
     print('{}: /ask {}'.format(cid, message.text))
-    bot.forward_message(privilegedChats[0],cid,message.message_id)
+    for item in privilegedChats:
+        bot.forward_message(item, cid, message.message_id)
+        bot.send_message(item, 'from: {}'.format(cid))
     bot.send_message(cid, 'Mensaje enviado, gracias. :)')
-    bot.send_message(privilegedChats[0], 'from: {}'.format(cid))
+
     userStep[cid] = 0
 
 @bot.message_handler(commands=['reply'])
@@ -85,7 +92,7 @@ def replyQuestion(message):
     cid = message.chat.id
     print('{}: {}'.format(cid, message.text))
     bot.send_chat_action(cid, 'typing')
-    if cid not in privilegedChats:
+    if not hasAccess(cid):
         bot.send_message(cid, 'No tienes permiso.')
     else:
         bot.send_message(cid, 'Responder a: Respuesta')
@@ -133,7 +140,7 @@ def resetUser(message):
 def broadcast(message):
     cid = message.chat.id
     print('{}: {}'.format(cid, message.text))
-    if cid not in privilegedChats:
+    if not hasAccess(cid):
         bot.send_message(cid, 'Lo siento, solo obedezco a Giuliano.')
         sendSystemBroadcast('{} intentó hacer broadcast por comando.'.format(cid))
     else:
@@ -145,7 +152,7 @@ def broadcast(message):
 def broadcast(message):
     cid = message.chat.id
     print('{}: {}'.format(cid, message.text))
-    if cid not in privilegedChats:
+    if not hasAccess(cid):
         bot.send_message(cid, 'Lo siento, solo obedezco a Giuliano.')
         sendSystemBroadcast('{} intentó acceder a la base de datos por comando.'.format(cid))
     else:
@@ -212,7 +219,7 @@ def process_age_step(message):
             return
         database.user_dict[chat_id]['age'] = age
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-        markup.add('Macho', 'Hembra')
+        markup.add('Hombre', 'Mujer')
         msg = bot.reply_to(message, '¿Cuál es tu género?', reply_markup=markup)
         bot.register_next_step_handler(msg, process_sex_step)
     except Exception as e:
@@ -223,7 +230,7 @@ def process_sex_step(message):
         chat_id = message.chat.id
         bot.send_chat_action(chat_id, 'typing')
         sex = message.text
-        if (sex == u'Macho') or (sex == u'Hembra'):
+        if (sex == u'Hombre') or (sex == u'Mujer'):
             database.user_dict[chat_id]['sex'] = sex
         else:
             raise Exception()
@@ -244,7 +251,7 @@ def kill(m):
 @bot.message_handler(commands=['whois'])
 def whois(message):
     cid = message.chat.id
-    if cid not in privilegedChats:
+    if not hasAccess(cid):
         bot.send_message(cid, 'Lo siento, solo obedezco a Giuliano.')
         sendSystemBroadcast('{} intentó obtener info de un usuario por comando.'.format(cid))
     else:
@@ -386,7 +393,7 @@ def echo_all(message):
             cid = message.chat.id
             text = message.text
 
-            if message.chat.id not in privilegedChats:
+            if not hasAccess(message.chat.id):
                 bot.send_message(cid, "No tienes permiso.")
                 return
             else:
@@ -405,7 +412,7 @@ def echo_all(message):
             cid = message.chat.id
             text = message.text
 
-            if message.chat.id not in privilegedChats:
+            if not hasAccess(message.chat.id):
                 bot.send_message(cid, "No tienes permiso.")
                 return
             else:
@@ -424,7 +431,7 @@ def echo_all(message):
             bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
             bot.send_chat_action(cid, 'typing')
 
-            if message.chat.id not in privilegedChats:
+            if not hasAccess(message.chat.id):
                 bot.send_message(cid, "No tienes permiso, habla con Giuliano")
 
             lightList = ''
