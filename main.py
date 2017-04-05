@@ -1,4 +1,4 @@
-import telebot, requests, wolframalpha, persistence, sys, conversationTools
+import telebot, requests, wolframalpha, persistence, sys, os, conversationTools
 from telebot import types
 from watson_developer_cloud import ConversationV1, LanguageTranslatorV2
 import time
@@ -49,6 +49,13 @@ commands = {  # command description used in the "help" command
                 'ejemplos' : 'Muestra algunos ejemplos de preguntas interesantes.',
                 'cid' : 'Muestra el chat id.',
                 'reset': 'Permite reingresar tus datos básicos.',
+}
+
+adminCommands = {
+    'broadcast' : 'Envía un mensaje masivo a todos los que han hablado con Watson.',
+    'reply' : 'Responde un mensaje que haya sido enviado por un usuario mediante /ask. (Necesitas el chat id para responder)',
+    'whois' : 'Obtiene fotos de perfil de una persona. (Necesitas el chat id)',
+    'database' : 'Muestra la base de datos de usuarios y chat ids de Watson.'
 }
 
 ejemplos = ['Cuánta sal hay en el mar?', 'Puedes fallar el test de Turing?', 'Cuéntame un chiste sucio?', 'Two things are infinite...', 'Aeropuerto de santiago de chile', 'Quién dejó el gato afuera?', 'Tell me a physics joke', 'Iones de ácido débiles', 'Cálculo de gravedad', 'Próximo eclipse solar', 'Aplicaciones que soportan .gif', 'Pikachu', 'Voyager 1', 'Caninos', 'Lenguas de España']
@@ -178,7 +185,7 @@ def send_welcome(message):
         print('{}: is new user'.format(cid))
         database.save
     if cid not in database.user_dict:  # if user hasn't used the "/start" command yet:
-        bot.reply_to(message, 'Hola, soy Watson, un bot con principios de machine learning, lo cual me ayuda a aprender de mis interacciones con humanos.\nCuéntame un poco de ti :)')
+        bot.reply_to(message, 'Hola, soy Watson, un bot con machine learning, para aprender de mis interacciones con humanos.\nCuéntame un poco de ti :)')
         bot.send_message(cid, '¿Cuál es tu nombre?')
         bot.register_next_step_handler(message, process_name_step)
         userStep[cid] = 1
@@ -284,9 +291,12 @@ def getUserInfo(message):
             userStep[cid] = 0
 
     except Exception as e:
-        bot.reply_to(message, 'oooops {}'.format(e))
-
-
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        str = '{} {} {}'.format(exc_type, fname, exc_tb.tb_lineno)
+        print(exc_type, fname, exc_tb.tb_lineno)
+        sendSystemBroadcast('{} error >> {}'.format(cid, str))
+        bot.reply_to(message, 'oooops {} >> {}'.format(e, str))
 
 @bot.message_handler(commands=['help', 'h', 'ayuda'])
 def command_help(m):
@@ -318,6 +328,8 @@ def offLight(message, bulb = None):
             bot.send_message(cid, '[{}]: La luz ya estaba apagada.'.format(bulb))
         else:
             b.set_light(bulb, 'on', False)
+            bot.send_chat_action(cid, 'typing')
+            time.sleep(2)
             if b.get_light(bulb)['state']['on'] == False:
                 bot.send_message(cid, 'Listo')
             else:
@@ -325,8 +337,12 @@ def offLight(message, bulb = None):
                 houseLightState(message)
         userStep[cid] = 0
     except Exception as e:
-        print(e)
-        bot.reply_to(message, 'oooops {}'.format(e))
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        str = '{} {} {}'.format(exc_type, fname, exc_tb.tb_lineno)
+        print(exc_type, fname, exc_tb.tb_lineno)
+        sendSystemBroadcast('{} error >> {}'.format(cid, str))
+        bot.reply_to(message, 'oooops {} >> {}'.format(e, str))
 
 def onLight(message, bulb = None):
     cid = message.chat.id
@@ -336,6 +352,8 @@ def onLight(message, bulb = None):
         if b.get_light(bulb)['state']['on'] == True:
             bot.send_message(cid, '[{}]: La luz ya estaba encendida.'.format(bulb))
         else:
+            bot.send_chat_action(cid, 'typing')
+            time.sleep(2)
             b.set_light(bulb, 'on', True)
             if b.get_light(bulb)['state']['on'] == False:
                 bot.send_message(cid, 'Listo')
@@ -345,7 +363,12 @@ def onLight(message, bulb = None):
         userStep[cid] = 0
     except Exception as e:
         print(e)
-        bot.reply_to(message, 'oooops {}'.format(e))
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        str = '{} {} {}'.format(exc_type, fname, exc_tb.tb_lineno)
+        print(exc_type, fname, exc_tb.tb_lineno)
+        sendSystemBroadcast('{} error >> {}'.format(cid, str))
+        bot.reply_to(message, 'oooops {} >> {}'.format(e, str))
 
 def houseLightState(message):
     cid = message.chat.id
@@ -354,29 +377,6 @@ def houseLightState(message):
     for item in getLights():
         mes += '[{}]: {}\n'.format(item, b.get_light(item)['state']['on'])
     bot.reply_to(message, mes)
-
-
-
-# @bot.message_handler(func=lambda message: get_user_step(message.chat.id, message) == 1)
-# def lightSelection(m):
-#     cid = m.chat.id
-#     text = m.text
-#     lights = []
-#
-# #    for item in getLights():
-# #        lights.append(item)
-#
-#     # for some reason the 'upload_photo' status isn't quite working (doesn't show at all)
-#     bot.send_chat_action(cid, 'typing')
-#
-#     if text in lights:  # send the appropriate image based on the reply to the "/getImage" command
-#         b.set_light(text, 'on', 'True')
-#         bot.send_message(cid, 'Comando enviado', reply_markup=hideBoard)  # send file and hide keyboard, after image is sent
-#         userStep[cid] = 0  # reset the users step back to 0
-#     else:
-#         bot.send_message(cid, "¡No escribas tonterías si incluso te pongo un teclado con opciones en pantalla!")
-#         bot.send_message(cid, "Intenta de nuevo....")
-#     return
 
 @bot.message_handler(func=lambda m: get_user_step(m.chat.id, m) != 1, content_types=['text'])
 def echo_all(message):
@@ -466,7 +466,7 @@ def echo_all(message):
                     source='en', target='es')
                 bot.send_message(message.chat.id, translation)
         else:
-            bot.send_message(message.chat.id, response['output']['text'])
+            bot.send_message(message.chat.id, response['output']['text'][0])
             if conversationTools.isEmpty(response):
                 markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
                 markup.add('Si', 'No')
@@ -475,10 +475,14 @@ def echo_all(message):
                 userStep[cid] = 1
                 message = bot.register_next_step_handler(message, askWolfram)
 
-    except(IndexError) as err:
-        bot.reply_to(message, 'oooops {} >> {}'.format(err, response['output']['text'][0]))
-        print(response)
-        print(err)
+    except(IndexError) as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        str = '{} {} {}'.format(exc_type, fname, exc_tb.tb_lineno)
+        print(exc_type, fname, exc_tb.tb_lineno)
+        sendSystemBroadcast('{} error >> {}'.format(cid, str))
+        bot.reply_to(message, 'oooops {} >> {}: {}'.format(e, response['output']['text'][0], str))
+
     finally:
         pass
 
