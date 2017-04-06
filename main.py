@@ -137,7 +137,7 @@ def resetUser(message):
     userStep[cid] = 1
     bot.send_message(cid, 'Vamos a verificar tu información!')
     bot.send_chat_action(cid, 'typing')
-    time.sleep(2)
+    time.sleep(1)
     userInfo(message)
     bot.send_message(cid, '¡Actualicemos la información!')
     bot.send_message(cid, '¿Cómo te llamas?')
@@ -376,6 +376,8 @@ def houseLightState(message):
     mes = 'Este es el estado de la casa:\n'
     for item in getLights():
         mes += '[{}]: {}\n'.format(item, b.get_light(item)['state']['on'])
+    mes = mes.replace('False', 'Apagada')
+    mes = mes.replace('True', 'Encendida')
     bot.reply_to(message, mes)
 
 @bot.message_handler(func=lambda m: get_user_step(m.chat.id, m) != 1, content_types=['text'])
@@ -401,9 +403,10 @@ def echo_all(message):
                 for item in getLights():
                     markup.add(item)
                     if item in text:
+                        bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
                         onLight(message, item)
                         return
-                bot.send_message(cid, "¿Cual de todas?", reply_markup=markup)  # show the keyboard
+                bot.send_message(cid, "¿Cuál de todas?", reply_markup=markup)  # show the keyboard
                 userStep[cid] = 1
                 bot.register_next_step_handler(message, onLight)
 
@@ -420,19 +423,21 @@ def echo_all(message):
                 for item in getLights():
                     markup.add(item)
                     if item in text:
+                        bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
                         offLight(message, item)
                         return
-                bot.send_message(cid, "¿Cual de todas?", reply_markup=markup)  # show the keyboard
+                bot.send_message(cid, "¿Cuál de todas?", reply_markup=markup)  # show the keyboard
                 userStep[cid] = 1
                 bot.register_next_step_handler(message, offLight)
+                bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
 
         elif conversationTools.hasIntent(response, 'lista_luces'):
             cid = message.chat.id
-            bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
-            bot.send_chat_action(cid, 'typing')
-
             if not hasAccess(message.chat.id):
                 bot.send_message(cid, "No tienes permiso, habla con Giuliano")
+                return
+            bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
+            bot.send_chat_action(cid, 'typing')
 
             lightList = ''
             i = 0
@@ -455,6 +460,12 @@ def echo_all(message):
 
         elif conversationTools.hasIntent(response, 'hora'):
             bot.reply_to(message, response['output']['text'][0].format(time.strftime('%H:%M:%S')))
+        elif conversationTools.hasIntent(response, 'estadoCasa'):
+            bot.send_chat_action(cid, 'typing')
+            bot.send_message(cid, response['output']['text'][0])
+            bot.send_chat_action(cid, 'typing')
+            houseLightState(message)
+            return
         elif conversationTools.hasIntent(response, 'chiste'):
             resp = requests.get('http://api.icndb.com/jokes/random')
             if resp.status_code != 200:
@@ -528,7 +539,7 @@ def handleWolframQuestion(message):
 def main_loop():
     bot.polling(True)
     while 1:
-        pass
+        time.sleep(1)
 
 if __name__ == '__main__':
     try:
