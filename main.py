@@ -270,7 +270,9 @@ def getUserInfo(message):
     cid = message.chat.id
     try:
         photo = bot.get_user_profile_photos(database.user_dict[int(message.text)]['id'], limit=2)
-        if len(photo.photos) == 0: return bot.send_message(cid, 'No hay fotos para \'{}\' :('.format(database.user_dict[int(message.text)]['name']))
+        if len(photo.photos) == 0:
+            userStep[cid] = 0
+            return bot.send_message(cid, 'No hay fotos para \'{}\' :('.format(database.user_dict[int(message.text)]['name']))
         for item in photo.photos:
             bot.send_chat_action(cid, 'upload_photo')
             fid = item[0].file_id #File ID
@@ -326,6 +328,8 @@ def offLight(message, bulb = None):
     try:
         if b.get_light(bulb)['state']['on'] == False:
             bot.send_message(cid, '[{}]: La luz ya estaba apagada.'.format(bulb))
+            userStep[cid] = 0
+            return
         else:
             b.set_light(bulb, 'on', False)
             bot.send_chat_action(cid, 'typing')
@@ -351,6 +355,8 @@ def onLight(message, bulb = None):
     try:
         if b.get_light(bulb)['state']['on'] == True:
             bot.send_message(cid, '[{}]: La luz ya estaba encendida.'.format(bulb))
+            userStep[cid] = 0
+            return
         else:
             bot.send_chat_action(cid, 'typing')
             time.sleep(2)
@@ -434,7 +440,7 @@ def echo_all(message):
         elif conversationTools.hasIntent(response, 'lista_luces'):
             cid = message.chat.id
             if not hasAccess(message.chat.id):
-                bot.send_message(cid, "No tienes permiso, habla con Giuliano")
+                bot.send_message(cid, "No tienes permiso.")
                 return
             bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
             bot.send_chat_action(cid, 'typing')
