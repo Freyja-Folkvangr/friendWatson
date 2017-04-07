@@ -2,10 +2,10 @@ import telebot, requests, wolframalpha, persistence, sys, os, conversationTools
 from telebot import types
 from watson_developer_cloud import ConversationV1, LanguageTranslatorV2
 import time
-from phue import Bridge
+#from phue import Bridge
 
-b = Bridge('172.27.0.116')
-b.connect()
+#b = Bridge('172.27.0.116')
+#b.connect()
 
 databaseFile = 'pyping-v1.db'
 databasePath = './' + databaseFile
@@ -18,7 +18,7 @@ def getLights():
         yield light
     pass
 
-privilegedChats = [42789923, 25863480]
+privilegedChats = [42789923, 25863480, 332992877]
 def hasAccess(cid):
     if cid in privilegedChats:
         return True
@@ -321,70 +321,70 @@ def sendEjemplos(m):
     bot.send_message(cid, examples)  # send the generated help page
     bot.send_message(cid, 'Si quieres saber más de mi, solo debes preguntármelo.')
 
-def offLight(message, bulb = None):
-    cid = message.chat.id
-    bot.send_chat_action(cid, 'typing')
-    if bulb == None: bulb = message.text
-    try:
-        if b.get_light(bulb)['state']['on'] == False:
-            bot.send_message(cid, '[{}]: La luz ya estaba apagada.'.format(bulb))
-            userStep[cid] = 0
-            return
-        else:
-            b.set_light(bulb, 'on', False)
-            bot.send_chat_action(cid, 'typing')
-            time.sleep(2)
-            if b.get_light(bulb)['state']['on'] == False:
-                bot.send_message(cid, 'Listo')
-            else:
-                bot.send_message(cid, '[{}]: Hubo un problema al apagar la luz.'.format(bulb))
-                houseLightState(message)
-        userStep[cid] = 0
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        str = '{} {} {}'.format(exc_type, fname, exc_tb.tb_lineno)
-        print(exc_type, fname, exc_tb.tb_lineno)
-        sendSystemBroadcast('{} error >> {}'.format(cid, str))
-        bot.reply_to(message, 'oooops {} >> {}'.format(e, str))
-
-def onLight(message, bulb = None):
-    cid = message.chat.id
-    bot.send_chat_action(cid, 'typing')
-    if bulb == None: bulb = message.text
-    try:
-        if b.get_light(bulb)['state']['on'] == True:
-            bot.send_message(cid, '[{}]: La luz ya estaba encendida.'.format(bulb))
-            userStep[cid] = 0
-            return
-        else:
-            bot.send_chat_action(cid, 'typing')
-            time.sleep(2)
-            b.set_light(bulb, 'on', True)
-            if b.get_light(bulb)['state']['on'] == False:
-                bot.send_message(cid, 'Listo')
-            else:
-                bot.send_message(cid, '[{}]: Hubo un problema al encender la luz.'.format(bulb))
-                houseLightState(message)
-        userStep[cid] = 0
-    except Exception as e:
-        print(e)
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        str = '{} {} {}'.format(exc_type, fname, exc_tb.tb_lineno)
-        print(exc_type, fname, exc_tb.tb_lineno)
-        sendSystemBroadcast('{} error >> {}'.format(cid, str))
-        bot.reply_to(message, 'oooops {} >> {}'.format(e, str))
-
-def houseLightState(message):
-    cid = message.chat.id
-    bot.send_chat_action(cid, 'typing')
-    mes = 'Este es el estado de la casa:\n'
-    for item in getLights():
-        mes += '[{}]: {}\n'.format(item, b.get_light(item)['state']['on'])
-    mes = mes.replace('False', 'Apagada')
-    mes = mes.replace('True', 'Encendida')
-    bot.reply_to(message, mes)
+# def offLight(message, bulb = None):
+#     cid = message.chat.id
+#     bot.send_chat_action(cid, 'typing')
+#     if bulb == None: bulb = message.text
+#     try:
+#         if b.get_light(bulb)['state']['on'] == False:
+#             bot.send_message(cid, '[{}]: La luz ya estaba apagada.'.format(bulb))
+#             userStep[cid] = 0
+#             return
+#         else:
+#             b.set_light(bulb, 'on', False)
+#             bot.send_chat_action(cid, 'typing')
+#             time.sleep(2)
+#             if b.get_light(bulb)['state']['on'] == False:
+#                 bot.send_message(cid, 'Listo')
+#             else:
+#                 bot.send_message(cid, '[{}]: Hubo un problema al apagar la luz.'.format(bulb))
+#                 houseLightState(message)
+#         userStep[cid] = 0
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         str = '{} {} {}'.format(exc_type, fname, exc_tb.tb_lineno)
+#         print(exc_type, fname, exc_tb.tb_lineno)
+#         sendSystemBroadcast('{} error >> {}'.format(cid, str))
+#         bot.reply_to(message, 'oooops {} >> {}'.format(e, str))
+#
+# def onLight(message, bulb = None):
+#     cid = message.chat.id
+#     bot.send_chat_action(cid, 'typing')
+#     if bulb == None: bulb = message.text
+#     try:
+#         if b.get_light(bulb)['state']['on'] == True:
+#             bot.send_message(cid, '[{}]: La luz ya estaba encendida.'.format(bulb))
+#             userStep[cid] = 0
+#             return
+#         else:
+#             bot.send_chat_action(cid, 'typing')
+#             time.sleep(2)
+#             b.set_light(bulb, 'on', True)
+#             if b.get_light(bulb)['state']['on'] == False:
+#                 bot.send_message(cid, 'Listo')
+#             else:
+#                 bot.send_message(cid, '[{}]: Hubo un problema al encender la luz.'.format(bulb))
+#                 houseLightState(message)
+#         userStep[cid] = 0
+#     except Exception as e:
+#         print(e)
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         str = '{} {} {}'.format(exc_type, fname, exc_tb.tb_lineno)
+#         print(exc_type, fname, exc_tb.tb_lineno)
+#         sendSystemBroadcast('{} error >> {}'.format(cid, str))
+#         bot.reply_to(message, 'oooops {} >> {}'.format(e, str))
+#
+# def houseLightState(message):
+#     cid = message.chat.id
+#     bot.send_chat_action(cid, 'typing')
+#     mes = 'Este es el estado de la casa:\n'
+#     for item in getLights():
+#         mes += '[{}]: {}\n'.format(item, b.get_light(item)['state']['on'])
+#     mes = mes.replace('False', 'Apagada')
+#     mes = mes.replace('True', 'Encendida')
+#     bot.reply_to(message, mes)
 
 @bot.message_handler(func=lambda m: get_user_step(m.chat.id, m) != 1, content_types=['text'])
 def echo_all(message):
@@ -396,66 +396,66 @@ def echo_all(message):
         'text': message.text, 'context' : cid})
     print('{}: {} >> R: {}'.format(cid, message.text, response['output']['text'][0]))
     try:
-        if conversationTools.hasIntent(response, 'enciende'):
-            message.stateRequest = False
-            cid = message.chat.id
-            text = message.text
+        # if conversationTools.hasIntent(response, 'enciende'):
+        #     message.stateRequest = False
+        #     cid = message.chat.id
+        #     text = message.text
+        #
+        #     if not hasAccess(message.chat.id):
+        #         bot.send_message(cid, "No tienes permiso.")
+        #         return
+        #     else:
+        #         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        #         for item in getLights():
+        #             markup.add(item)
+        #             if item in text:
+        #                 bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
+        #                 onLight(message, item)
+        #                 return
+        #         bot.send_message(cid, "¿Cuál de todas?", reply_markup=markup)  # show the keyboard
+        #         userStep[cid] = 1
+        #         bot.register_next_step_handler(message, onLight)
+        #
+        # elif conversationTools.hasIntent(response, 'apaga'):
+        #     message.stateRequest = False
+        #     cid = message.chat.id
+        #     text = message.text
+        #
+        #     if not hasAccess(message.chat.id):
+        #         bot.send_message(cid, "No tienes permiso.")
+        #         return
+        #     else:
+        #         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        #         for item in getLights():
+        #             markup.add(item)
+        #             if item in text:
+        #                 bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
+        #                 offLight(message, item)
+        #                 return
+        #         bot.send_message(cid, "¿Cuál de todas?", reply_markup=markup)  # show the keyboard
+        #         userStep[cid] = 1
+        #         bot.register_next_step_handler(message, offLight)
+        #         bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
+        #
+        # elif conversationTools.hasIntent(response, 'lista_luces'):
+        #     cid = message.chat.id
+        #     if not hasAccess(message.chat.id):
+        #         bot.send_message(cid, "No tienes permiso.")
+        #         return
+        #     bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
+        #     bot.send_chat_action(cid, 'typing')
+        #
+        #     lightList = ''
+        #     i = 0
+        #     for item in getLights():
+        #         if i == 0:
+        #             lightList += item
+        #         else:
+        #             lightList += ', {}'.format(item)
+        #         i += 1
+        #     bot.send_message(cid, 'Estas son las luces que encontré: {}'.format(lightList))
 
-            if not hasAccess(message.chat.id):
-                bot.send_message(cid, "No tienes permiso.")
-                return
-            else:
-                markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-                for item in getLights():
-                    markup.add(item)
-                    if item in text:
-                        bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
-                        onLight(message, item)
-                        return
-                bot.send_message(cid, "¿Cuál de todas?", reply_markup=markup)  # show the keyboard
-                userStep[cid] = 1
-                bot.register_next_step_handler(message, onLight)
-
-        elif conversationTools.hasIntent(response, 'apaga'):
-            message.stateRequest = False
-            cid = message.chat.id
-            text = message.text
-
-            if not hasAccess(message.chat.id):
-                bot.send_message(cid, "No tienes permiso.")
-                return
-            else:
-                markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-                for item in getLights():
-                    markup.add(item)
-                    if item in text:
-                        bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
-                        offLight(message, item)
-                        return
-                bot.send_message(cid, "¿Cuál de todas?", reply_markup=markup)  # show the keyboard
-                userStep[cid] = 1
-                bot.register_next_step_handler(message, offLight)
-                bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
-
-        elif conversationTools.hasIntent(response, 'lista_luces'):
-            cid = message.chat.id
-            if not hasAccess(message.chat.id):
-                bot.send_message(cid, "No tienes permiso.")
-                return
-            bot.send_message(message.chat.id, response['output']['text'], disable_notification=True)
-            bot.send_chat_action(cid, 'typing')
-
-            lightList = ''
-            i = 0
-            for item in getLights():
-                if i == 0:
-                    lightList += item
-                else:
-                    lightList += ', {}'.format(item)
-                i += 1
-            bot.send_message(cid, 'Estas son las luces que encontré: {}'.format(lightList))
-
-        elif conversationTools.hasResponseText(response, 'sendWatson'):
+        if conversationTools.hasResponseText(response, 'sendWatson'):
             from random import randint
             photo = open('./img/' + str(randint(1, 2))+'.jpg', 'rb')  # open reader
             bot.send_chat_action(cid, 'upload_photo')
@@ -466,12 +466,12 @@ def echo_all(message):
 
         elif conversationTools.hasIntent(response, 'hora'):
             bot.reply_to(message, response['output']['text'][0].format(time.strftime('%H:%M:%S')))
-        elif conversationTools.hasIntent(response, 'estadoCasa'):
-            bot.send_chat_action(cid, 'typing')
-            bot.send_message(cid, response['output']['text'][0])
-            bot.send_chat_action(cid, 'typing')
-            houseLightState(message)
-            return
+        # elif conversationTools.hasIntent(response, 'estadoCasa'):
+        #     bot.send_chat_action(cid, 'typing')
+        #     bot.send_message(cid, response['output']['text'][0])
+        #     bot.send_chat_action(cid, 'typing')
+        #     houseLightState(message)
+        #     return
         elif conversationTools.hasIntent(response, 'chiste'):
             resp = requests.get('http://api.icndb.com/jokes/random')
             if resp.status_code != 200:
