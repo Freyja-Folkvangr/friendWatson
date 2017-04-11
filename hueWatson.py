@@ -1,4 +1,4 @@
-import telebot, requests, wolframalpha, persistence, sys, os, conversationTools, pymongo
+import telebot, requests, wolframalpha, persistence, sys, os, conversationTools
 from telebot import types
 from watson_developer_cloud import ConversationV1, LanguageTranslatorV2
 import time
@@ -7,15 +7,16 @@ import time
 #b = Bridge('172.27.0.116')
 #b.connect()
 
+databaseFile = 'pyping-v1.db'
+databasePath = './' + databaseFile
 
-client = pymongo.MongoClient('mongodb://admin:XJROENXBKWZXDWMC@bluemix-sandbox-dal-9-portal.7.dblayer.com:25382')
-db = client.user_dict
+database = persistence.Database(databasePath)
 
-# def getLights():
-#     lights = b.get_light_objects('name')
-#     for light in lights:
-#         yield light
-#     pass
+def getLights():
+    lights = b.get_light_objects('name')
+    for light in lights:
+        yield light
+    pass
 
 privilegedChats = [42789923, 25863480, 332992877]
 def hasAccess(cid):
