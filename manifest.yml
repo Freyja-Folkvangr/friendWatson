@@ -1,4 +1,9 @@
 applications:
 - name: hueWatson
   random-route: true
-  memory: 128M
+  command: python hueWatson.py
+  memory: 64M
+
+properties:
+  logger_endpoint:
+    port: 443
