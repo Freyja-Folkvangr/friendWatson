@@ -12,11 +12,11 @@ databasePath = './' + databaseFile
 
 database = persistence.Database(databasePath)
 
-def getLights():
-    lights = b.get_light_objects('name')
-    for light in lights:
-        yield light
-    pass
+# def getLights():
+#     lights = b.get_light_objects('name')
+#     for light in lights:
+#         yield light
+#     pass
 
 privilegedChats = [42789923, 25863480, 332992877]
 def hasAccess(cid):
