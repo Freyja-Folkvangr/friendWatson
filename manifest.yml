@@ -2,7 +2,7 @@ applications:
 - name: hueWatson
   random-route: true
   command: python hueWatson.py
-  memory: 64M
+  memory: 256M
 
 properties:
   logger_endpoint:

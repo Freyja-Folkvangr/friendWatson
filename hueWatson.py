@@ -545,7 +545,8 @@ def handleWolframQuestion(message):
 def main_loop():
     bot.polling(True)
     while 1:
-        time.sleep(1)
+        pass
+        #time.sleep(2)
 
 if __name__ == '__main__':
     try:
