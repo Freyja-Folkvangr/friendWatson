@@ -455,13 +455,13 @@ def echo_all(message):
         #         i += 1
         #     bot.send_message(cid, 'Estas son las luces que encontré: {}'.format(lightList))
 
-        if conversationTools.hasResponseText(response, 'sendWatson'):
-            from random import randint
-            photo = open('./img/' + str(randint(1, 2))+'.jpg', 'rb')  # open reader
-            bot.send_chat_action(cid, 'upload_photo')
-            bot.send_photo(cid, photo, 'THINK')  # send downloaded file
+        # if conversationTools.hasResponseText(response, 'sendWatson'):
+        #     from random import randint
+        #     photo = open('./img/' + str(randint(1, 2))+'.jpg', 'rb')  # open reader
+        #     bot.send_chat_action(cid, 'upload_photo')
+        #     bot.send_photo(cid, photo, 'THINK')  # send downloaded file
 
-        elif conversationTools.hasResponseText(response, 'askWolfram'):
+        if conversationTools.hasResponseText(response, 'askWolfram'):
             handleWolframQuestion(message)
 
         elif conversationTools.hasIntent(response, 'hora'):
@@ -550,6 +550,6 @@ def main_loop():
 if __name__ == '__main__':
     try:
         main_loop()
-    except KeyboardInterrupt:
+    except():
         print >> sys.stderr, '\nExiting by user request.\n'
         sys.exit(0)
